@@ -5,7 +5,7 @@ import tensorflow as tf
 from network import VGG16
 
 
-def configure():
+def configure(model_id):
     # training
     flags = tf.app.flags
     flags.DEFINE_integer('max_step', 10, '# of step for training')
@@ -23,9 +23,9 @@ def configure():
     flags.DEFINE_integer('height', 32, 'height size')
     flags.DEFINE_integer('width', 32, 'width size')
     # Debug
-    flags.DEFINE_string('logdir', './logdir', 'Log dir')
-    flags.DEFINE_string('modeldir', './modeldir', 'Model dir')
-    flags.DEFINE_string('sampledir', './samples/', 'Sample directory')
+    flags.DEFINE_string('logdir', './logdir'+model_id, 'Log dir')
+    flags.DEFINE_string('modeldir', './modeldir'+model_id, 'Model dir')
+    flags.DEFINE_string('sampledir', './samples/'+model_id, 'Sample directory')
     flags.DEFINE_string('model_name', 'model', 'Model file name')
     flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
     flags.DEFINE_integer('test_step', 0, 'Test or predict model at this step')
@@ -44,12 +44,13 @@ def main(_):
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', dest='action', type=str, default='train',
                         help='actions: train, test')
+    parser.add_argument('--model_id',type=str)
     args = parser.parse_args()
     if args.action not in ['train', 'test']:
         print('invalid action: ', args.action)
         print("Please input a action: train, test")
     else:
-        model = VGG16(tf.Session(), configure())
+        model = VGG16(tf.Session(), configure(args.model_id))
         getattr(model, args.action)()
 
 
