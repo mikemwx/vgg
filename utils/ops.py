@@ -4,7 +4,7 @@ import tensorflow as tf
 def conv2d(inputs, num_outputs, kernel_size, scope):
     outputs = tf.contrib.layers.conv2d(
         inputs, num_outputs, kernel_size, scope=scope,
-        activation_fn=None, biases_initializer=None)
+        activation_fn=tf.nn.relu, biases_initializer=None)
     outputs = batch_norm(outputs, scope)
     return outputs
 
