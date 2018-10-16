@@ -108,7 +108,7 @@ class VGG16(object):
                 loss, summary = self.sess.run(
                     [self.loss_op, self.valid_summary], feed_dict=feed_dict)
                 self.save_summary(summary, epoch_num+self.conf.reload_step)
-                print('----testing loss', loss)
+                print('epoch %d; training loss %f'% (epoch_num,loss))
             if epoch_num and epoch_num % self.conf.summary_interval == 0:
                 inputs, labels = train_reader.next_batch(self.conf.batch)
                 feed_dict = {self.inputs: inputs, self.labels: labels}
@@ -121,7 +121,7 @@ class VGG16(object):
                 feed_dict = {self.inputs: inputs, self.labels: labels}
                 loss, _ = self.sess.run(
                     [self.loss_op, self.train_op], feed_dict=feed_dict)
-                print('----training loss', loss)
+                print('epoch %d; training loss %f'%( epoch_num,loss))
             if epoch_num and epoch_num % self.conf.save_interval == 0:
                 self.save(epoch_num+self.conf.reload_step)
 
