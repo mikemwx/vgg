@@ -6,9 +6,10 @@ from utils import ops
 
 class VGG16(object):
 
-    def __init__(self, sess, conf):
-        self.sess = sess
+    def __init__(self, conf):
         self.conf = conf
+        self.sess = tf.Session()
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.def_params()
         if not os.path.exists(conf.modeldir):
             os.makedirs(conf.modeldir)
@@ -17,6 +18,14 @@ class VGG16(object):
         self.configure_networks()
         self.train_summary = self.config_summary('train')
         self.valid_summary = self.config_summary('valid')
+        latest_checkpoint_path = tf.train.latest_checkpoint(self.conf.modeldir)
+        print(latest_checkpoint_path)
+        if latest_checkpoint_path is not None:
+            self.saver.restore(self.sess, latest_checkpoint_path)
+            self.global_step = self.global_step + int(latest_checkpoint_path.rsplit('-')[1])
+        print(tf.train.global_step(self.sess,self.global_step))
+            
+        
 
     def def_params(self):
         self.data_format = 'NHWC'
@@ -31,7 +40,7 @@ class VGG16(object):
         self.build_network()
         self.cal_loss()
         self.train_op = tf.train.AdamOptimizer(
-            self.conf.learning_rate).minimize(self.loss_op, name='train_op')
+            self.conf.learning_rate).minimize(self.loss_op, name='train_op',global_step=self.global_step)
         tf.set_random_seed(self.conf.random_seed)
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
@@ -97,33 +106,37 @@ class VGG16(object):
         self.writer.add_summary(summary, step)
 
     def train(self):
-        if self.conf.reload_step > 0:
-            self.reload(self.conf.reload_step)
+#         print("reload step %d" %(self.conf.reload_step))
+#         if self.conf.reload_step > 0:
+#             self.reload(self.conf.reload_step)
+#             starting_epoch = self.conf.reload_step 
+#         else:
+#             starting_epoch = 0
         train_reader = H5DataLoader(self.conf.data_dir+self.conf.train_data)
         valid_reader = H5DataLoader(self.conf.data_dir+self.conf.valid_data)
-        for epoch_num in range(self.conf.max_step+1):
+        for epoch_num in range(tf.train.global_step(self.sess,self.global_step),self.conf.max_step+1):
             if epoch_num and epoch_num % self.conf.test_interval == 0:
                 inputs, labels = valid_reader.next_batch(self.conf.batch)
                 feed_dict = {self.inputs: inputs, self.labels: labels}
                 loss, summary = self.sess.run(
                     [self.loss_op, self.valid_summary], feed_dict=feed_dict)
-                self.save_summary(summary, epoch_num+self.conf.reload_step)
-                print('epoch %d; training loss %f'% (epoch_num,loss))
+                self.save_summary(summary,epoch_num)
+                print('global step: %d; training loss %f'% (epoch_num,loss))
             if epoch_num and epoch_num % self.conf.summary_interval == 0:
                 inputs, labels = train_reader.next_batch(self.conf.batch)
                 feed_dict = {self.inputs: inputs, self.labels: labels}
                 loss, _, summary = self.sess.run(
                     [self.loss_op, self.train_op, self.train_summary],
                     feed_dict=feed_dict)
-                self.save_summary(summary, epoch_num+self.conf.reload_step)
+                self.save_summary(summary, epoch_num)
             else:
                 inputs, labels = train_reader.next_batch(self.conf.batch)
                 feed_dict = {self.inputs: inputs, self.labels: labels}
                 loss, _ = self.sess.run(
                     [self.loss_op, self.train_op], feed_dict=feed_dict)
-                print('epoch %d; training loss %f'%( epoch_num,loss))
+                print('global step: %d; training loss %f'%( epoch_num,loss))
             if epoch_num and epoch_num % self.conf.save_interval == 0:
-                self.save(epoch_num+self.conf.reload_step)
+                self.save(epoch_num)
 
     def test(self):
         print('---->testing ', self.conf.test_step)
@@ -148,7 +161,7 @@ class VGG16(object):
         print('---->saving', step)
         checkpoint_path = os.path.join(
             self.conf.modeldir, self.conf.model_name)
-        self.saver.save(self.sess, checkpoint_path, global_step=step)
+        self.saver.save(self.sess, checkpoint_path, global_step=self.global_step)
 
     def reload(self, step):
         checkpoint_path = os.path.join(
