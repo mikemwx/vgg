@@ -8,17 +8,17 @@ from network import VGG16
 def configure(model_id):
     # training
     flags = tf.app.flags
-    flags.DEFINE_integer('max_step', 10, '# of step for training')
+    flags.DEFINE_integer('max_step', 10000, '# of step for training')
     flags.DEFINE_integer('test_interval', 100, '# of interval to test a model')
     flags.DEFINE_integer('save_interval', 1000, '# of interval to save model')
     flags.DEFINE_integer('summary_interval', 100, '# of step to save summary')
-    flags.DEFINE_float('learning_rate', 1e-3, 'learning rate')
+    flags.DEFINE_float('learning_rate', 1e-2, 'learning rate')
     # data
     flags.DEFINE_string('data_dir', './dataset/', 'Name of data directory')
     flags.DEFINE_string('train_data', 'cifar10train.h5', 'Training data')
     flags.DEFINE_string('valid_data', 'cifar10valid.h5', 'Validation data')
     flags.DEFINE_string('test_data', 'cifar10valid.h5', 'Testing data')
-    flags.DEFINE_integer('batch', 2, 'batch size')
+    flags.DEFINE_integer('batch', 16, 'batch size')
     flags.DEFINE_integer('channel', 3, 'channel size')
     flags.DEFINE_integer('height', 32, 'height size')
     flags.DEFINE_integer('width', 32, 'width size')
