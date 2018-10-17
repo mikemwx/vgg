@@ -8,7 +8,7 @@ class VGG16(object):
 
     def __init__(self, conf):
         self.conf = conf
-        self.sess = tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=self.conf.num_threads))
+        self.sess = tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=self.conf.num_threads,gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=self.conf.gpu_fraction)))
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.def_params()
         if not os.path.exists(conf.modeldir):

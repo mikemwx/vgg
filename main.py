@@ -9,7 +9,8 @@ def configure(args):
     # training
     flags = tf.app.flags
     flags.DEFINE_integer('num_threads',16,'# of threads for training')
-    flags.DEFINE_integer('max_step', 20000, '# of step for training')
+    flags.DEFINE_float('gpu_fraction',0.5,'percentage of gpu used for training one instance')
+    flags.DEFINE_integer('max_step', 60000, '# of step for training')
     flags.DEFINE_integer('test_interval', 200, '# of interval to test a model')
     flags.DEFINE_integer('save_interval', 1000, '# of interval to save model')
     flags.DEFINE_integer('summary_interval', 200, '# of step to save summary')
@@ -19,7 +20,7 @@ def configure(args):
     flags.DEFINE_string('train_data', 'cifar10train.h5', 'Training data')
     flags.DEFINE_string('valid_data', 'cifar10valid.h5', 'Validation data')
     flags.DEFINE_string('test_data', 'cifar10valid.h5', 'Testing data')
-    flags.DEFINE_integer('batch', 16, 'batch size')
+    flags.DEFINE_integer('batch', 64, 'batch size')
     flags.DEFINE_integer('channel', 3, 'channel size')
     flags.DEFINE_integer('height', 32, 'height size')
     flags.DEFINE_integer('width', 32, 'width size')
@@ -58,5 +59,5 @@ def main(_):
 
 if __name__ == '__main__':
     # configure which gpu or cpu to use
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     tf.app.run()
