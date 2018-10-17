@@ -11,6 +11,7 @@ def configure(args):
     flags.DEFINE_integer('num_threads',16,'# of threads for training')
     flags.DEFINE_float('gpu_fraction',0.5,'percentage of gpu used for training one instance')
     flags.DEFINE_integer('max_step', 60000, '# of step for training')
+    flags.DEFINE_list('drop_outs',[[0.7,1,1],[0.6,1,1],[0.6,0.6,1],[0.6,0.6,1],[0.6,0.6,1]],'keep probabilities to use at each layer'     )
     flags.DEFINE_integer('test_interval', 200, '# of interval to test a model')
     flags.DEFINE_integer('save_interval', 1000, '# of interval to save model')
     flags.DEFINE_integer('summary_interval', 200, '# of step to save summary')

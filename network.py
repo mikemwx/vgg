@@ -74,34 +74,41 @@ class VGG16(object):
 
     def inference(self, inputs):
         outputs = inputs
-        for layer_index in range(self.conf.network_depth-1):
+        for layer_index in range(self.conf.network_depth):
             is_first = True if not layer_index else False
-            is_last = True if layer_index == self.conf.network_depth-2 else False
+            is_last = True if layer_index == self.conf.network_depth-1 else False
             name = 'down%s' % layer_index
             outputs = self.build_down_block(
-                outputs, name, is_first, is_last)
+                outputs, name, layer_index,is_first, is_last)
         outputs = self.build_bottom_block(outputs, 'bottom')
         return outputs
 
-    def build_down_block(self, inputs, name, first=False, last=False):
+    def build_down_block(self, inputs, name, layer_index=0, first=False, last=False):
         if first:
             num_outputs = self.conf.start_channel_num
         elif last:
             num_outputs = inputs.shape[self.channel_axis].value
         else:
             num_outputs = 2 * inputs.shape[self.channel_axis].value
+        print("drop outs: ",self.conf.drop_outs[layer_index])
         conv1 = ops.conv2d(
-            inputs, num_outputs, self.conv_size, name+'/conv1')
+            inputs, num_outputs, self.conv_size, name+'/conv1',)
+        conv1 = ops.dropout(conv1,self.conf.drop_outs[layer_index][0],name+'/dropout1')
         conv2 = ops.conv2d(
             conv1, num_outputs, self.conv_size, name+'/conv2',)
+        conv2 = ops.dropout(conv2,self.conf.drop_outs[layer_index][1],name+'/dropout2')
         pool = ops.pool2d(
             conv2, self.pool_size, name+'/pool')
+        pool = ops.dropout(pool,self.conf.drop_outs[layer_index][2],name+'/dropout_pool')
         return pool
 
     def build_bottom_block(self, inputs, name):
         outs = tf.contrib.layers.flatten(inputs, scope=name+'/flat')
-        outs = ops.dense(outs, 4096, name+'/dense1')
-        outs = ops.dense(outs, self.conf.class_num, name+'/dense2')
+        outs = ops.dense(outs, 4096, name+'/dense1',activation_fn=tf.nn.relu)
+        outs = ops.dropout(outs,0.5)
+        outs = ops.dense(outs, 4096, name+'/dense2',activation_fn=tf.nn.relu)
+        outs = ops.dropout(outs,0.5)
+        outs = ops.dense(outs, self.conf.class_num, name+'/dense_output',activation_fn=tf.nn.softmax)
         return outs
 
     def save_summary(self, summary, step):
