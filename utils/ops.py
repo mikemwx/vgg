@@ -6,7 +6,7 @@ def conv2d(inputs, num_outputs, kernel_size, scope):
         inputs, num_outputs, kernel_size, scope=scope,
         activation_fn=tf.nn.relu, biases_initializer=None)
     outputs = batch_norm(outputs, scope)
-    outputs = tf.contrib.layers.dropout(inputs=outputs,keep_prob=0.6)
+    outputs = tf.contrib.layers.dropout(inputs=outputs,keep_prob=0.8)
     return outputs
 
 
@@ -19,11 +19,11 @@ def dense(inputs, dim, scope):
     outputs = tf.contrib.layers.fully_connected(
         inputs, dim, scope=scope+'/dense')
     outputs = batch_norm(outputs, scope)
-    outputs = tf.contrib.layers.dropout(inputs=outputs,keep_prob=0.6)
+    outputs = tf.contrib.layers.dropout(inputs=outputs,keep_prob=0.8)
     return outputs
 
 
 def batch_norm(inputs, scope):
     return tf.contrib.layers.batch_norm(
-        inputs, decay=0.9, center=True, scale=True, activation_fn=None,
+        inputs, decay=0.99872, center=True, scale=True, activation_fn=None,
         updates_collections=None, epsilon=1e-5, scope=scope+'/batch_norm')
