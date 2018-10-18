@@ -42,8 +42,10 @@ class VGG16(object):
     def configure_networks(self):
         self.build_network()
         self.cal_loss()
-        self.train_op = tf.train.AdamOptimizer(
-            self.conf.learning_rate).minimize(self.loss_op, name='train_op',global_step=self.global_step)
+        self.learning_rate_placeholder = tf.placeholder(tf.float32, [], name='learning_rate')
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate_placeholder) 
+        self.train_op = self.optimizer.minimize(self.loss_op, name='train_op',global_step=self.global_step)
+        self.applied_learning_rate = self.conf.learning_rate
         tf.set_random_seed(self.conf.random_seed)
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
@@ -69,6 +71,8 @@ class VGG16(object):
         summarys = []
         summarys.append(tf.summary.scalar(name+'/loss', self.loss_op))
         summarys.append(tf.summary.scalar(name+'/accuracy', self.accuracy_op))
+#         summarys.append(tf.summary.scalar(name+'/learning_rate',self.optimizer._lr))
+        summarys.append(tf.summary.scalar(name+'/learning_rate',self.learning_rate_placeholder))
         summary = tf.summary.merge(summarys)
         return summary
 
@@ -97,17 +101,22 @@ class VGG16(object):
         conv2 = ops.conv2d(
             conv1, num_outputs, self.conv_size, name+'/conv2',)
         conv2 = ops.dropout(conv2,self.conf.drop_outs[layer_index][1],name+'/dropout2')
-        pool = ops.pool2d(
-            conv2, self.pool_size, name+'/pool')
-        pool = ops.dropout(pool,self.conf.drop_outs[layer_index][2],name+'/dropout_pool')
+        if layer_index > 1:
+            conv3 = ops.conv2d(conv2, num_outputs, self.conv_size, name+'/conv3',)
+            conv3 = ops.dropout(conv3,self.conf.drop_outs[layer_index][2],name+'/dropout3')
+            pool = ops.pool2d(conv3, self.pool_size, name+'/pool')
+            pool = ops.dropout(pool,self.conf.drop_outs[layer_index][3],name+'/dropout_pool')
+        else:
+            pool = ops.pool2d(conv2, self.pool_size, name+'/pool')
+            pool = ops.dropout(pool,self.conf.drop_outs[layer_index][2],name+'/dropout_pool')
         return pool
 
     def build_bottom_block(self, inputs, name):
         outs = tf.contrib.layers.flatten(inputs, scope=name+'/flat')
-        outs = ops.dense(outs, 4096, name+'/dense1',activation_fn=tf.nn.relu)
-        outs = ops.dropout(outs,0.5)
-        outs = ops.dense(outs, 4096, name+'/dense2',activation_fn=tf.nn.relu)
-        outs = ops.dropout(outs,0.5)
+        outs = ops.dense(outs, 1024, name+'/dense1',activation_fn=tf.nn.relu)
+        outs = ops.dropout(outs,0.5,name+'/dropout1')
+#         outs = ops.dense(outs, 4096, name+'/dense2',activation_fn=tf.nn.relu)
+#         outs = ops.dropout(outs,0.5,name+'/dropout2')
         outs = ops.dense(outs, self.conf.class_num, name+'/dense_output',activation_fn=tf.nn.softmax)
         return outs
 
@@ -124,29 +133,33 @@ class VGG16(object):
 #             starting_epoch = 0
         train_reader = H5DataLoader(self.conf.data_dir+self.conf.train_data)
         valid_reader = H5DataLoader(self.conf.data_dir+self.conf.valid_data)
-        for epoch_num in range(tf.train.global_step(self.sess,self.global_step),self.conf.max_step+1):
+        for epoch_num in range(tf.train.global_step(self.sess,self.global_step),self.conf.max_step+1):  
+            if epoch_num % 5000 is 0 and epoch_num:
+                self.applied_learning_rate *= 0.5
+                print(self.applied_learning_rate)
             if epoch_num and epoch_num % self.conf.test_interval == 0:
                 inputs, labels = valid_reader.next_batch(self.conf.batch)
-                feed_dict = {self.inputs: inputs, self.labels: labels}
+                feed_dict = {self.inputs: inputs, self.labels: labels,self.learning_rate_placeholder: self.applied_learning_rate}
                 loss, summary = self.sess.run(
                     [self.loss_op, self.valid_summary], feed_dict=feed_dict)
                 self.save_summary(summary,epoch_num)
                 print('global step: %d; training loss %f'% (epoch_num,loss))
             if epoch_num and epoch_num % self.conf.summary_interval == 0:
                 inputs, labels = train_reader.next_batch(self.conf.batch)
-                feed_dict = {self.inputs: inputs, self.labels: labels}
+                feed_dict = {self.inputs: inputs, self.labels: labels,self.learning_rate_placeholder:self.applied_learning_rate}
                 loss, _, summary = self.sess.run(
                     [self.loss_op, self.train_op, self.train_summary],
                     feed_dict=feed_dict)
                 self.save_summary(summary, epoch_num)
             else:
                 inputs, labels = train_reader.next_batch(self.conf.batch)
-                feed_dict = {self.inputs: inputs, self.labels: labels}
+                feed_dict = {self.inputs: inputs, self.labels: labels,self.learning_rate_placeholder:self.applied_learning_rate}
                 loss, _ = self.sess.run(
                     [self.loss_op, self.train_op], feed_dict=feed_dict)
                 print('global step: %d; training loss %f'%( epoch_num,loss))
             if epoch_num and epoch_num % self.conf.save_interval == 0:
                 self.save(epoch_num)
+  
 
     def test(self):
         print('---->testing ', self.conf.test_step)

@@ -8,7 +8,7 @@ def conv2d(inputs, num_outputs, kernel_size, scope):
     outputs = batch_norm(outputs, scope)
     return outputs
 
-def dropout(inputs, keep_prob=1,scope):
+def dropout(inputs, keep_prob,scope):
     if keep_prob < 1:
         return tf.contrib.layers.dropout(inputs,keep_prob=keep_prob,scope =scope)
     else:
