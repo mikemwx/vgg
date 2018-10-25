@@ -1,4 +1,5 @@
 # Development log 
+update .gitignore to ignore model and log data 
 ## utils/cifar_util.py
 - correct data size to original 50k
 - normalise data using calculated channel mean and standard deviation 
