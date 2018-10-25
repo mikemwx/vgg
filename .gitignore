@@ -10,6 +10,8 @@ __pycache__/
 .Python
 env/
 build/
+modeldir*
+note*
 develop-eggs/
 dist/
 downloads/

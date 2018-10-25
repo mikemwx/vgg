@@ -29,26 +29,44 @@ def maybe_download_and_extract(dest_directory):
 
 
 def build_h5_dataset(data_dir, out_dir, shape=(32, 32, 3), name='cifar10'):
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
     dataset = h5py.File(out_dir+name+'training.h5', 'w')
-    dataset.create_dataset('data', (5000, *shape), dtype='f')
-    dataset.create_dataset('labels', (5000,), dtype='i')
+    dataset.create_dataset('data', (50000, *shape), dtype='f')
+    dataset.create_dataset('labels', (50000,), dtype='i')
+
     for i in range(5):
         file = os.path.join(
             data_dir, 'cifar-10-batches-py', 'data_batch_%s' % (i + 1))
         data = unpickle(file)
-        for index in range(1000):
-            dataset['data'][i*1000+index] = np.reshape(
+        for index in range(10000):
+            img = np.reshape(
                 data[b'data'][index], shape, 'F')
-            dataset['labels'][i*1000+index] = data[b'labels'][index]
+            img = img.astype(np.float32)
+            img[:,:,0] = (img[:,:,0]/255 - 0.49139968)/0.24703233
+            img[:,:,1] = (img[:,:,1]/255 - 0.48215827)/0.24348505
+            img[:,:,2] = (img[:,:,2]/255 - 0.44653118)/0.26158768
+            dataset['data'][i*10000+index] = img
+            dataset['labels'][i*10000+index] = data[b'labels'][index]
     dataset.close()
+
     dataset = h5py.File(out_dir+name+'valid.h5', 'w')
-    dataset.create_dataset('data', (1000, *shape), dtype='f')
-    dataset.create_dataset('labels', (1000,), dtype='i')
+    dataset.create_dataset('data', (10000, *shape), dtype='f')
+    dataset.create_dataset('labels', (10000,), dtype='i')
     file = os.path.join(data_dir, 'cifar-10-batches-py', 'test_batch')
     data = unpickle(file)
-    for index in range(1000):
-        dataset['data'][index] = np.reshape(data[b'data'][index], shape, 'F')
+    for index in range(10000):
+        img = np.reshape(data[b'data'][index], shape, 'F')
+        img = img.astype(np.float32)
+        img[:,:,0] = (img[:,:,0]/255 - 0.49139968)/0.24703233
+        img[:,:,1] = (img[:,:,1]/255 - 0.48215827)/0.24348505
+        img[:,:,2] = (img[:,:,2]/255 - 0.44653118)/0.26158768
+        dataset['data'][index] = img
         dataset['labels'][index] = data[b'labels'][index]
+    # print(dataset['data'][:,:,:,0].mean())
+    # print(dataset['data'][:,:,:,0].std())
+    # print(dataset['data'][:,:,:,1].mean())
+    # print(dataset['data'][:,:,:,1].std())
     dataset.close()
 
 
@@ -58,5 +76,5 @@ def unpickle(file):
 
 
 if __name__ == '__main__':
-    maybe_download_and_extract('../dataset/')
-    build_h5_dataset('../dataset/', '../dataset/')
+#     maybe_download_and_extract('../dataset/')
+    build_h5_dataset('../dataset/', '../dataset_norm/')
