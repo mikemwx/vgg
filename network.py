@@ -15,7 +15,7 @@ class VGG16(object):
         config.inter_op_parallelism_threads=self.conf.num_threads
         self.sess = tf.Session(config=config)
         latest_checkpoint_path = tf.train.latest_checkpoint(self.conf.modeldir)
-        print(latest_checkpoint_path)
+        print('Lastest checkpoint find: ',  latest_checkpoint_path)
         if latest_checkpoint_path is not None:
             self.global_step = tf.Variable(int(latest_checkpoint_path.rsplit('-')[1]), name='global_step', trainable=False)
         else:
@@ -34,7 +34,7 @@ class VGG16(object):
         self.valid_summary = self.config_summary('valid')
         if latest_checkpoint_path is not None:
             self.saver.restore(self.sess, latest_checkpoint_path)
-        print(tf.train.global_step(self.sess,self.global_step))
+        print('global step:',tf.train.global_step(self.sess,self.global_step))
 
 
 
@@ -61,7 +61,6 @@ class VGG16(object):
         self.writer = tf.summary.FileWriter(self.conf.logdir, self.sess.graph)
 
     def build_network(self):
-        self.regularizer = tf.contrib.layers.l2_regularizer(scale=self.conf.regularisation)
         self.inputs = tf.placeholder(
             tf.float32, self.input_shape, name='inputs')
         self.labels = tf.placeholder(
@@ -103,7 +102,7 @@ class VGG16(object):
             num_outputs = inputs.shape[self.channel_axis].value
         else:
             num_outputs = 2 * inputs.shape[self.channel_axis].value
-        print("drop outs: ",self.conf.drop_outs[layer_index])
+        print("drop out keep probabilities on layer %d: "%(layer_index),self.conf.drop_outs[layer_index])
         conv1 = ops.conv2d(
             inputs, num_outputs, self.conv_size, name+'/conv1')
         conv1 = ops.dropout(conv1,self.conf.drop_outs[layer_index][0],name+'/dropout1')
@@ -136,12 +135,14 @@ class VGG16(object):
         self.writer.add_summary(summary, step)
 
     def learning_rate_schedule(self,step):
-        if step < 15000:
+        if step < 25000:
             return 1e-3
-        elif step < 40000:
+        elif step < 50000:
             return 1e-4
-        elif step < 60000:
+        elif step < 75000:
             return 1e-5
+        else:
+            return 1e-6
 
     def train(self):
         def random_flip(image):

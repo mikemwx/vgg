@@ -10,7 +10,7 @@ from network import VGG16
 def configure(args):
     # training
     flags = tf.app.flags
-    # number of threads to use 
+    # number of threads to use
     flags.DEFINE_integer('num_threads',128,'# of threads for training')
     flags.DEFINE_integer('max_step', 160000, '# of step for training')
     #drop out keep fraction for vgg16 at different layers

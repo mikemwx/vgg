@@ -31,7 +31,7 @@ def maybe_download_and_extract(dest_directory):
 def build_h5_dataset(data_dir, out_dir, shape=(32, 32, 3), name='cifar10'):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    dataset = h5py.File(out_dir+name+'training.h5', 'w')
+    dataset = h5py.File(out_dir+name+'train.h5', 'w')
     dataset.create_dataset('data', (50000, *shape), dtype='f')
     dataset.create_dataset('labels', (50000,), dtype='i')
 
@@ -76,5 +76,5 @@ def unpickle(file):
 
 
 if __name__ == '__main__':
-#     maybe_download_and_extract('../dataset/')
-    build_h5_dataset('../dataset/', '../dataset_norm/')
+    maybe_download_and_extract('../dataset_norm/')
+    build_h5_dataset('../dataset_norm/', '../dataset_norm/')
